@@ -1,9 +1,14 @@
 "use client";
 import React, { useCallback, useEffect, useState } from "react";
 import LiveCursors from "./cursor/LiveCursors";
-import { useMyPresence, useOthers } from "@/liveblocks.config";
+import {
+  useBroadcastEvent,
+  useEventListener,
+  useMyPresence,
+  useOthers,
+} from "@/liveblocks.config";
 import CursorChat from "./cursor/CursorChat";
-import { CursorMode, CursorState, Reaction } from "@/types/type";
+import { CursorMode, CursorState, Reaction, ReactionEvent } from "@/types/type";
 import ReactionSelector from "./reaction/ReactionButton";
 import FlyingReaction from "./reaction/FlyingReaction";
 import useInterval from "@/hooks/useInterval";
@@ -15,6 +20,14 @@ const Live = () => {
     mode: CursorMode.Hidden,
   });
   const [reactions, setReactions] = useState<Reaction[]>([]);
+
+  const broadcast = useBroadcastEvent();
+
+  useInterval(() => {
+    setReactions((reactions) =>
+      reactions.filter((r) => Date.now() - r.timestamp < 4000)
+    );
+  }, 100);
 
   useInterval(() => {
     if (
@@ -31,8 +44,24 @@ const Live = () => {
           },
         ])
       );
+      // send local changes to other clients
+      broadcast({ x: cursor.x, y: cursor.y, value: cursorState.reaction });
     }
   }, 100);
+
+  // listen for changes from other clients
+  useEventListener((eventData) => {
+    const event = eventData.event as ReactionEvent;
+    setReactions((reactions) =>
+      reactions.concat([
+        {
+          point: { x: event.x, y: event.y },
+          value: event.value,
+          timestamp: Date.now(),
+        },
+      ])
+    );
+  });
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
