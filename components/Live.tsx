@@ -13,7 +13,9 @@ import ReactionSelector from "./reaction/ReactionButton";
 import FlyingReaction from "./reaction/FlyingReaction";
 import useInterval from "@/hooks/useInterval";
 
-const Live = () => {
+type Props = { canvasRef: React.MutableRefObject<HTMLCanvasElement | null> };
+
+const Live = ({ canvasRef }: Props) => {
   const others = useOthers();
   const [{ cursor }, updateMyPresence] = useMyPresence() as any;
   const [cursorState, setCursorState] = useState<CursorState>({
@@ -148,13 +150,14 @@ const Live = () => {
 
   return (
     <div
+      id="canvas"
       onPointerMove={handlePointerMove}
       onPointerLeave={handlePointerLeave}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       className="flex h-screen w-full items-center justify-center  text-center"
     >
-      <h1 className="text-2xl text-white">Figma Clone</h1>
+      <canvas ref={canvasRef} />
       {reactions.map((r) => (
         <FlyingReaction
           key={r.timestamp.toString()}
